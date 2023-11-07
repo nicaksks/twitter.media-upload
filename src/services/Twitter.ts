@@ -19,21 +19,27 @@ export default class Twitter {
     this.upload();
   }
 
-  private async upload(): Promise<void> {
+  private query(image: string): string {
 
-    const image = this.random_image;
     const bytes = this.imageBytes(image);
     const format = image.split('.')[1];
 
     const query = new URLSearchParams({
       command: "INIT",
-      total_bytes: bytes.toString(),
+      total_bytes: bytes,
       media_type: `image/${format}`,
       media_category: "tweet_image"
     }).toString();
 
+    return query;
+  }
+
+  private async upload(): Promise<void> {
+
+    const image = this.random_image;
+
     try {
-      const { data } = await this._instance.post(this._upload + query);
+      const { data } = await this._instance.post(this._upload + this.query(image));
       console.log('[1|4] |-> Image started to be uploaded.');
       await this.upload_append(data.media_id_string, image);
     } catch (e) {
@@ -71,16 +77,16 @@ export default class Twitter {
   private get random_image(): string {
     const images = readdirSync('./src/assets/');
     if (!images.length) throw new Error('Add images in src/assets.');
-    
+
     const i = Math.floor(Math.random() * images.length);
     return images[i];
   }
 
-  private imageBytes(image: string): number {
+  private imageBytes(image: string): string {
     const bytes = readFileSync(`./src/assets/${image}`);
     if (!bytes.length) throw new Error('Error checking the number of bytes in the image.');
 
-    return bytes.byteLength;
+    return bytes.byteLength.toString();
   }
 
   private async post(id: number): Promise<void> {
