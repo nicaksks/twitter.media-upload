@@ -1,12 +1,12 @@
 import axios, { AxiosInstance } from 'axios';
-import { queryId, payload } from '../utils/constants';
-import { readdir, readFile, readFileSync } from 'node:fs';
+import { QUERY_ID, payload } from '../utils/constants';
+import { readdirSync, readFileSync } from 'node:fs';
 
 export default class Twitter {
 
-  public readonly _instance: AxiosInstance;
-  public readonly _upload: string = 'https://upload.twitter.com/1.1/media/upload.json?';
-  public readonly _path: string = './src/assets/';
+  private readonly _instance: AxiosInstance;
+  private readonly _upload: string = 'https://upload.twitter.com/1.1/media/upload.json?';
+  private readonly _path: string = './src/assets/';
 
   constructor() {
     this._instance = axios.create({
@@ -16,12 +16,13 @@ export default class Twitter {
         "Authorization": process.env.BEARER
       }
     });
+    this.upload();
   }
 
   private async upload(): Promise<void> {
 
-    const image = await this.image();
-    const bytes = await this.imageBytes(image);
+    const image = this.random_image;
+    const bytes = this.imageBytes(image);
     const format = image.split('.')[1];
 
     const query = new URLSearchParams({
@@ -38,7 +39,6 @@ export default class Twitter {
     } catch (e) {
       console.error('[1|4] |-> An error occurred while uploading the image. ', e);
     }
-
   }
 
   private async upload_append(id: number, image: string): Promise<void> {
@@ -68,42 +68,28 @@ export default class Twitter {
     };
   }
 
-  private image(): Promise<string> {
-    return new Promise((resolve, reject) => {
-      readdir('./src/assets/', async (err, images) => {
-        if (err) reject(err);
-        if (!images.length) throw new Error('Add images in src/assets.');
-        const i = Math.floor(Math.random() * images.length);
-        resolve(images[i]);
-      });
-    });
+  private get random_image(): string {
+    const images = readdirSync('./src/assets/');
+    if (!images.length) throw new Error('Add images in src/assets.');
+    
+    const i = Math.floor(Math.random() * images.length);
+    return images[i];
   }
 
-  private imageBytes(image: string): Promise<number> {
-    return new Promise((resolve, reject) => {
-      readFile(`./src/assets/${image}`, (err, data) => {
-        if (err) reject(err);
-        resolve(data.byteLength);
-      });
-    });
+  private imageBytes(image: string): number {
+    const bytes = readFileSync(`./src/assets/${image}`);
+    if (!bytes.length) throw new Error('Error checking the number of bytes in the image.');
+
+    return bytes.byteLength;
   }
 
   private async post(id: number): Promise<void> {
-
     try {
-      const { data } = await this._instance.post(`https://twitter.com/i/api/graphql/${queryId}/CreateTweet`, payload(id))
+      const { data } = await this._instance.post(`https://twitter.com/i/api/graphql/${QUERY_ID}/CreateTweet`, payload(id))
       if (data.data.create_tweet) return console.log('[4|4] |-> Tweet successfully created!');
       if (data.errors[0].code === 187) return console.log('Error |-> Duplicate tweet.');
     } catch (e) {
       console.error(e);
     };
   }
-
-  public async start() {
-    await this.upload();
-    setInterval(async () => {
-      await this.upload();
-    }, 20 * 60 * 1000)
-  }
-
 }

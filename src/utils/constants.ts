@@ -1,5 +1,5 @@
-export const queryId = "q88fRuxEq8t_M95MIQ53vw";
-export const features = {
+export const QUERY_ID = "q88fRuxEq8t_M95MIQ53vw";
+export const FEATURES = {
   "tweetypie_unmention_optimization_enabled": true,
   "responsive_web_edit_tweet_api_enabled": true,
   "graphql_is_translatable_rweb_tweet_is_translatable_enabled": true,
@@ -28,6 +28,6 @@ export const payload = (id: number): object => {
         "media_entities": [{ "media_id": id }]
       },
     },
-    "features": features
+    "features": FEATURES
   };
 }
